@@ -1,5 +1,7 @@
 # Veripack — Trusted Package Release Registry
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 > **A private JavaScript package registry compatible with npm, pnpm, and Bun
 > that audits every private release before it becomes installable and scans
 > public upstream packages at download time.**
@@ -605,9 +607,15 @@ Dockerfile.web         Production dashboard image
 
 ## Project status
 
-Veripack is an implementation baseline, not yet the full V1 contract. It should
-not be exposed directly to production users until the code and schema gaps in
-[V1 contract gaps](#v1-contract-gaps) are closed and the deployment owner has
-configured real identity/data services, TLS, backups, monitoring, sandbox
-runtime capacity, and a successful three-client staging run. The design contract
-in [`docs/v1-spec.md`](docs/v1-spec.md) is the source of truth for V1 behavior.
+The V1 contract is implemented (see [V1 contract status](#v1-contract-status)).
+It should not be exposed directly to production users until the deployment
+owner has configured real identity/data services, TLS, backups, monitoring,
+sandbox runtime capacity, and a successful three-client staging run. The
+design contract in [`docs/v1-spec.md`](docs/v1-spec.md) is the source of
+truth for V1 behavior.
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
+
+Copyright 2026 Prateek
