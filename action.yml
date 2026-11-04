@@ -1,0 +1,45 @@
+name: Veripack preflight
+description: Audit a package with Veripack before publishing it.
+inputs:
+  package-path:
+    description: Package directory or .tgz archive to audit.
+    required: false
+    default: .
+  registry-url:
+    description: Veripack gateway URL.
+    required: true
+  registry-token:
+    description: Short-lived Veripack registry token.
+    required: true
+  fail-on:
+    description: Fail on block (default) or warn.
+    required: false
+    default: block
+  sandbox:
+    description: Request the explicitly configured dynamic sandbox.
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Run Veripack preflight
+      shell: bash
+      env:
+        VERIPACK_REGISTRY_URL: ${{ inputs.registry-url }}
+        VERIPACK_REGISTRY_TOKEN: ${{ inputs.registry-token }}
+      run: |
+        set -euo pipefail
+        args=(audit "${{ inputs.package-path }}" --registry "$VERIPACK_REGISTRY_URL" --token "$VERIPACK_REGISTRY_TOKEN" --fail-on "${{ inputs.fail-on }}" --json)
+        if [[ "${{ inputs.sandbox }}" == "true" ]]; then args+=(--sandbox); fi
+        node "$GITHUB_ACTION_PATH/scripts/veripack-cli.mjs" "${args[@]}" | tee veripack-preflight-report.json
+    - name: Post the preflight report
+      if: always()
+      shell: bash
+      run: |
+        {
+          echo "## Veripack preflight"
+          echo ""
+          echo '```json'
+          cat veripack-preflight-report.json 2>/dev/null || echo '{"error": "no report produced"}'
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"

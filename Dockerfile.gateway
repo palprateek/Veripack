@@ -1,0 +1,36 @@
+FROM node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS build
+
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/shared/tsconfig.json packages/shared/tsconfig.json
+COPY packages/shared/src packages/shared/src
+COPY apps/gateway/package.json apps/gateway/package.json
+COPY apps/gateway/tsconfig.json apps/gateway/tsconfig.json
+COPY apps/gateway/src apps/gateway/src
+COPY apps/gateway/migrations apps/gateway/migrations
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @veripack/shared build
+RUN pnpm --filter @veripack/gateway build
+RUN pnpm --filter @veripack/gateway deploy --prod --legacy /prod/gateway
+
+FROM node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS runtime
+
+ENV NODE_ENV=production
+WORKDIR /app
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client \
+  && rm -rf /var/lib/apt/lists/*
+COPY --from=build /prod/gateway/package.json ./package.json
+COPY --from=build /prod/gateway/node_modules ./node_modules
+COPY --from=build /prod/gateway/dist ./dist
+COPY --from=build /prod/gateway/migrations ./migrations
+
+USER node
+EXPOSE 4874
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=6 \
+  CMD node -e "fetch('http://127.0.0.1:4874/livez').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+CMD ["node", "dist/index.js"]

@@ -1,0 +1,31 @@
+name: Veripack preflight example
+
+on:
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exchange GitHub OIDC token
+        id: registry-token
+        shell: bash
+        env:
+          VERIPACK_REGISTRY_URL: ${{ secrets.VERIPACK_REGISTRY_URL }}
+        run: |
+          set -euo pipefail
+          oidc_token="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=veripack" | jq -r .value)"
+          exchange="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $oidc_token" \
+            -X POST "$VERIPACK_REGISTRY_URL/-/auth/github/actions/exchange")"
+          echo "token=$(jq -r .accessToken <<<"$exchange")" >> "$GITHUB_OUTPUT"
+      - uses: ./
+        with:
+          registry-url: ${{ secrets.VERIPACK_REGISTRY_URL }}
+          registry-token: ${{ steps.registry-token.outputs.token }}

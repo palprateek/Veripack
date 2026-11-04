@@ -1,0 +1,35 @@
+FROM node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS build
+
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/shared/tsconfig.json packages/shared/tsconfig.json
+COPY packages/shared/src packages/shared/src
+COPY apps/web/package.json apps/web/package.json
+COPY apps/web/tsconfig.json apps/web/tsconfig.json
+COPY apps/web/next-env.d.ts apps/web/next-env.d.ts
+COPY apps/web/next.config.ts apps/web/next.config.ts
+COPY apps/web/app apps/web/app
+COPY apps/web/components apps/web/components
+COPY apps/web/lib apps/web/lib
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @veripack/shared build
+RUN pnpm --filter @veripack/web build
+
+FROM node@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS runtime
+
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+WORKDIR /app
+COPY --from=build /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=6 \
+  CMD node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+CMD ["node", "apps/web/server.js"]

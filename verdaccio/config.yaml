@@ -1,0 +1,48 @@
+# Verdaccio is the npm protocol/proxy/storage layer behind the gateway.
+# It is bound to localhost, and only the gateway can publish to it.
+
+storage: /verdaccio/storage
+plugins: /verdaccio/plugins
+
+url: http://localhost:4874/
+
+auth:
+  htpasswd:
+    file: /verdaccio/conf/htpasswd
+    algorithm: bcrypt
+    # Login for the seeded gateway user must stay enabled. With exactly one
+    # allowed user, new registrations fail because the limit is already reached.
+    max_users: 1
+
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    timeout: 60s
+    maxage: 10m
+    fail_timeout: 5m
+
+packages:
+  # Private scoped packages live here. Public scoped packages fall through to
+  # the npm uplink when they are not published locally.
+  "@*/*":
+    access: $all
+    publish: gateway
+    unpublish: gateway
+    proxy: npmjs
+
+  # Unscoped packages are proxied from npm. Unscoped private names require an
+  # explicit claim in the gateway before they can be published.
+  "**":
+    access: $all
+    publish: gateway
+    unpublish: gateway
+    proxy: npmjs
+
+middlewares:
+  audit:
+    enabled: true
+
+log:
+  type: stdout
+  format: pretty
+  level: warn

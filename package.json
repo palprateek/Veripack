@@ -1,0 +1,35 @@
+{
+  "name": "veripack",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private trusted JavaScript package registry for npm, pnpm, and Bun with a publish gate",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @veripack/shared build && pnpm --parallel --filter @veripack/gateway --filter @veripack/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm --filter @veripack/shared build && pnpm -r typecheck",
+    "test": "pnpm --filter @veripack/shared build && pnpm -r test",
+    "test:integration": "pnpm --filter @veripack/shared build && pnpm --filter @veripack/gateway test:integration",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v",
+    "infra:logs": "docker compose logs -f",
+    "verdaccio:seed": "node scripts/seed-verdaccio-auth.mjs",
+    "db:migrate": "pnpm --filter @veripack/gateway migrate",
+    "smoke": "node scripts/smoke-test.mjs",
+    "veripack": "node scripts/veripack-cli.mjs",
+    "backup": "pnpm --filter @veripack/gateway backup",
+    "backup:restore-check": "pnpm --filter @veripack/gateway backup:restore-check"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "bcryptjs": "^3.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

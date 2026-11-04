@@ -1,0 +1,15 @@
+{
+  "name": "@veripack/safe-package",
+  "version": "1.0.0",
+  "description": "M1 example: a low-risk release with no install scripts.",
+  "type": "module",
+  "main": "./index.js",
+  "files": ["index.js", "README.md"],
+  "license": "MIT",
+  "trust": {
+    "intent": "Add a small greeting helper. No new dependencies, capabilities, or install scripts."
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

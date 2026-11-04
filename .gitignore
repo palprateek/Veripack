@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.log
+*.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+
+verdaccio/htpasswd
+verdaccio/storage/
+
+examples/*/node_modules/
+examples/*/package-lock.json
+
+.DS_Store
+
+# Planning and demo intermediates (deliverables stay: demo mp4, script, thumbnail)
+docs/v1-implementation-plan.md
+better npm and npx.md
+demo-video/slides/
+demo-video/*.html
+demo-video/render*.mjs
+demo-video/record-dashboard.mjs
+demo-video/narrate.mjs
+demo-video/concat.txt

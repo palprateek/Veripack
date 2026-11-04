@@ -1,0 +1,59 @@
+groups:
+  - name: veripack
+    rules:
+      - alert: VeripackPendingReleaseStuck
+        expr: veripack_pending_oldest_age_seconds > 3600
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "A release has been pending for over an hour"
+          runbook: "docs/production-runbook.md — check the audit worker heartbeat and outbox, then the release's audit state"
+      - alert: VeripackAuditOutboxBacklog
+        expr: veripack_audit_outbox_oldest_age_seconds > 900
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Audit outbox entries are not being dispatched"
+          runbook: "docs/production-runbook.md — check pg-boss and worker processes (PROCESS_ROLE)"
+      - alert: VeripackReplayStuck
+        expr: veripack_replay_running_oldest_age_seconds > 600
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "A replay job has been running past its lease window"
+          runbook: "docs/production-runbook.md — Durable replay: lease takeover should recover it; check replay worker logs"
+      - alert: VeripackReplayExhausted
+        expr: veripack_replay_jobs_failed > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Replay jobs exhausted their attempts"
+          runbook: "docs/production-runbook.md — check release.replay_failed events and artifact holds, re-upload or requeue"
+      - alert: VeripackWorkerHeartbeatMissing
+        expr: veripack_audit_worker_heartbeat_age_seconds > 300
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No fresh audit worker heartbeat"
+          runbook: "docs/production-runbook.md — restart the worker process; readiness already fails closed"
+      - alert: VeripackInstallBlockSpike
+        expr: veripack_install_blocked_last_hour > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Blocked install attempts spiked in the last hour"
+          runbook: "docs/production-runbook.md — Serving boundary: inspect /admin/install-events for the blocking reason"
+      - alert: VeripackReadinessFailing
+        expr: veripack_gateway_requests_total{route="/readyz",status!="200"} > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Gateway readiness is failing"
+          runbook: "docs/production-runbook.md — check Postgres, Verdaccio identity authentication, and worker heartbeat"
