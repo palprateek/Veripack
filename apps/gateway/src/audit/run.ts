@@ -10,6 +10,7 @@ import {
   type AuditCacheKey,
 } from "./cache.js";
 import type { LlmAuditBackend, LlmAuditReview } from "./llm.js";
+import { detectNameSignals } from "./name-signals.js";
 import type { AuditPolicy } from "./policy.js";
 import {
   analyzeStaticArtifact,
@@ -56,6 +57,8 @@ export interface AuditRunInput {
   llm: LlmAuditBackend | null;
   /** Analysis already computed by a caller that needed the archive manifest. */
   prepared?: Pick<StaticAuditArtifacts, "current">;
+  /** Existing package names for typosquat/collision signals (V2). */
+  existingPackageNames?: string[];
 }
 
 export interface AuditRunResult {
@@ -297,6 +300,11 @@ export async function runAudit(
     }
   }
 
+  const nameSignals = detectNameSignals(
+    input.packageName,
+    input.existingPackageNames ?? [],
+  );
+
   const result = mergeLlmReview(
     deterministicResult,
     llmReview,
@@ -310,7 +318,7 @@ export async function runAudit(
       diffFiles: deterministicResult.policyMetrics?.diffFiles,
       diffLines: deterministicResult.policyMetrics?.diffLines,
     },
-    llmFailureSignals,
+    [...llmFailureSignals, ...nameSignals],
   );
 
   return { result, llmReview, sandbox, startedAt };

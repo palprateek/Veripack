@@ -11,6 +11,7 @@ import {
   countInstallableReleases,
   getPreviousInstallableRelease,
 } from "../registry-view.js";
+import { listPackageNames } from "../releases.js";
 import {
   validatePublishManifest,
   type NpmVersionManifest,
@@ -161,6 +162,10 @@ export async function registerPreflightRoutes(
         context.config.AUDIT_ENGINE_VERSION,
         policy.version,
       ].join(":");
+      const existingPackageNames = await listPackageNames(
+        context.pool,
+        context.config.ORG_ID,
+      );
       audited = await limiter.withTimeout(() =>
         preflightDeduper.run(dedupeKey, () =>
           runAudit({
@@ -184,6 +189,7 @@ export async function registerPreflightRoutes(
       firstRelease: releaseCount === 0,
       scopeKey: `private:${context.config.ORG_ID}`,
       engineVersion: context.config.AUDIT_ENGINE_VERSION,
+      existingPackageNames,
       cache: null,
       sandbox: null,
       llm: null,

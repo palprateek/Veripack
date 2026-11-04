@@ -118,6 +118,8 @@ const envSchema = z.object({
   GITHUB_TOKEN_EXCHANGE_SECRET: z.string().default(""),
   GITHUB_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   DASHBOARD_INTERNAL_SECRET: z.string().default(""),
+  AGENT_TOKEN: z.string().default(""),
+  AGENT_USER: z.string().default("agent-panel"),
 
   AUDIT_ENGINE_VERSION: z.string().default("0.2.0-static"),
   AUDIT_RULESET_VERSION: z.string().default("v1"),

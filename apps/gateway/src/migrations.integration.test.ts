@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { runMigrations } from "./migrations.js";
 import { createTestDatabase } from "./test-support/integration-db.js";
 
-const LATEST_MIGRATION = "012_dashboard_sessions.sql";
+const LATEST_MIGRATION = "013_v2_claims_agents.sql";
 
 async function seedReleaseAt006(
   pool: Awaited<ReturnType<typeof createTestDatabase>>["pool"],
@@ -81,6 +81,7 @@ describe("migration smoke test", () => {
         "010_v1_serving_boundary.sql",
         "011_v1_upstream_cache.sql",
         "012_dashboard_sessions.sql",
+        "013_v2_claims_agents.sql",
       ]);
 
       const releases = await db.pool.query<{ id: string }>(

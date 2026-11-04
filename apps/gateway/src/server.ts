@@ -21,6 +21,7 @@ import {
 import { MetricsRegistry } from "./metrics.js";
 import { registerPreflightRoutes } from "./routes/preflight.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
+import { registerV2Routes } from "./routes/v2.js";
 import { registerReviewRoutes } from "./routes/review.js";
 
 export async function buildServer(context: AppContext): Promise<FastifyInstance> {
@@ -166,6 +167,7 @@ export async function buildServer(context: AppContext): Promise<FastifyInstance>
   });
 
   await registerAdminRoutes(app, context);
+  await registerV2Routes(app, context);
   await registerDashboardRoutes(app, context);
   await registerReviewRoutes(app, context);
   await registerGithubRoutes(app, context);

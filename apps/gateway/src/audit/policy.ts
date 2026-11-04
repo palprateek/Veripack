@@ -32,6 +32,7 @@ export const DEFAULT_AUDIT_POLICY: AuditPolicy = {
   yank: { requireReview: true },
   quarantine: { requireReview: true },
   selfApproval: { enabled: false, maxRiskTier: "medium" },
+  revocation: { flagBelowInstalls: 0, withinDays: 30 },
 };
 
 /**
@@ -65,6 +66,7 @@ const V2_POLICY_FIELDS = [
   "yank",
   "quarantine",
   "selfApproval",
+  "revocation",
 ] as const;
 
 const verdictSchema = z.enum(["clear", "review", "block"]);
@@ -120,6 +122,12 @@ const policySchema = z
       .object({
         enabled: z.boolean(),
         maxRiskTier: z.literal("medium"),
+      })
+      .strict(),
+    revocation: z
+      .object({
+        flagBelowInstalls: z.number().int().nonnegative().max(1_000_000),
+        withinDays: z.number().int().positive().max(3_650),
       })
       .strict(),
   })
@@ -199,6 +207,7 @@ export function migrateLegacyAuditPolicy(
     yank: { ...DEFAULT_AUDIT_POLICY.yank },
     quarantine: { ...DEFAULT_AUDIT_POLICY.quarantine },
     selfApproval: { ...DEFAULT_AUDIT_POLICY.selfApproval },
+    revocation: { ...DEFAULT_AUDIT_POLICY.revocation },
   };
 }
 
@@ -296,6 +305,10 @@ function classifyDirection(
   after: unknown,
 ): PolicyChangeDirection {
   switch (path) {
+    case "revocation.flagBelowInstalls":
+      return Number(after) > Number(before) ? "tighten" : "loosen";
+    case "revocation.withinDays":
+      return Number(after) > Number(before) ? "tighten" : "loosen";
     case "firstRelease.review":
     case "provenance.required":
     case "yank.requireReview":

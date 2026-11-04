@@ -99,6 +99,13 @@ The V2 agent panel is not a V1 reviewer. LLM output is advisory only.
 - multi-registry support: PyPI, Maven, Cargo, JSR
 - policy-as-code, SIEM/S3 export, self-serve billing
 
+> Implementation note (V2 layer, shipped after V1): claim approval,
+> typosquat/collision signals, the advisory agent panel, threshold-based
+> revocation flagging, the `veripack run` CLI, and SIEM/S3 compliance
+> exports are implemented. Public mirror/attestations, cross-org sharing,
+> SAML/SSO, self-hosted/VPC packaging, multi-registry support, and
+> self-serve billing remain future work and are not claimed.
+
 ### Out
 
 - replacing npm's public registry

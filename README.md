@@ -223,7 +223,12 @@ inventories, dual Verdaccio identities, the alert pack, and `veripack
 registry rebuild`; server-side dashboard sessions with `__Host-` cookies,
 admin MFA, and step-up; and the `veripack publish` wrapper with digest
 idempotency. Claim approval, typosquat/collision detection, and the agent
-panel are V2, not V1.
+panel were V2 in the original contract and are now implemented as the V2
+layer: package name claims with admin approval, typosquat/collision signals,
+an advisory agent panel (agents never approve; humans decide),
+threshold-based revocation flagging, a `veripack run` npx-style CLI that
+shows the audit before executing, and SIEM/S3 compliance exports. Cross-org
+package sharing and multi-registry (non-JS) support remain future work.
 
 ## Supported clients
 

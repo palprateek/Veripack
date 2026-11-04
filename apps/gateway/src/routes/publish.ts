@@ -26,6 +26,7 @@ import {
   IngestionError,
   auditIngestionRejection,
 } from "../ingestion.js";
+import { getApprovedClaim } from "../claims.js";
 import { getCurrentAudit } from "../releases.js";
 import type { ReleaseStatus } from "@veripack/shared";
 import { parsePublishPayload, PayloadError } from "../npm/payload.js";
@@ -225,6 +226,22 @@ export async function publishHandler(
   }
 
   assertPackageAccess(publisher, parsed.packageName, "publish");
+
+  const approvedClaim = await getApprovedClaim(
+    context.pool,
+    context.config.ORG_ID,
+    parsed.packageName,
+  );
+  if (
+    approvedClaim &&
+    approvedClaim.claimant !== publisher.username &&
+    publisher.role !== "admin"
+  ) {
+    reply.code(403).send({
+      error: `${parsed.packageName} is claimed by ${approvedClaim.claimant}. Only the claimant may publish it.`,
+    });
+    return;
+  }
 
   if (
     !isScopedName(parsed.packageName) &&

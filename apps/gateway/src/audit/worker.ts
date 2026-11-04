@@ -8,6 +8,7 @@ import {
   getCurrentAudit,
   getReleaseById,
   insertAudit,
+  listPackageNames,
   insertEvent,
   isUniqueViolation,
   type AuditRow,
@@ -20,6 +21,7 @@ import {
 import type { ReleaseLifecycle } from "../lifecycle.js";
 import { isNoSuchKeyError, type Storage } from "../storage.js";
 import { markArtifactMissing } from "../serving.js";
+import { createAgentReview } from "../agent-reviews.js";
 import { createLlmBackend, type LlmAuditBackend } from "./llm.js";
 import { createArtifactCache, runAudit } from "./run.js";
 import { parseAuditPolicy, type AuditPolicy } from "./policy.js";
@@ -254,6 +256,7 @@ async function processRelease(
       policy,
       scopeKey: `private:${release.org_id}`,
       engineVersion: config.AUDIT_ENGINE_VERSION,
+      existingPackageNames: await listPackageNames(pool, release.org_id),
       cache: createArtifactCache(pool),
       sandbox: config.SANDBOX_ENABLE_ON_AUDIT
         ? (value) => runSandbox(value, config)
@@ -295,6 +298,25 @@ async function processRelease(
     );
     await resumeWithAudit(deps, release, raced);
     return;
+  }
+
+  if (llmReview) {
+    // The agent panel records the LLM advisor's structured recommendation.
+    // It is advisory evidence only; it never approves a release.
+    await createAgentReview(pool, {
+      orgId: release.org_id,
+      releaseId: release.id,
+      auditId: audit.id,
+      agentId: `llm:${llmReview.backend}`,
+      recommendation:
+        result.policyResult === "block"
+          ? "reject"
+          : result.riskTier === "low"
+            ? "approve"
+            : "needs_info",
+      confidence: llmReview.confidence,
+      rationale: result.summary,
+    }).catch(() => undefined);
   }
 
   await insertEvent(pool, {

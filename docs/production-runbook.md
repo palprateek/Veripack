@@ -333,6 +333,18 @@ entries with `veripack registry artifact reupload --release <id> --file
 <tarball>`. Prometheus alert rules live in
 `observability/prometheus/veripack-alerts.yml`.
 
+## V2 operations
+
+Package claims (`/claims` in the dashboard, `/admin/claims` for decisions)
+make approved names exclusive to their claimant. Agent reviews are posted
+with `AGENT_TOKEN` to `/agent/reviews` and stay advisory. Threshold
+revocation flagging uses the policy `revocation` block: run
+`POST /admin/revocation/evaluate` (or let the flags surface in audit events
+as `release.revocation_flagged`) and quarantine manually after review —
+flagging never quarantines automatically. Compliance exports
+(`POST /admin/exports`) write JSON Lines of audit, auth, and install events
+to the `exports/` prefix for SIEM ingestion.
+
 ## Backup and incident controls
 
 - Backups are a consistent pair: a Postgres dump and the S3 objects it

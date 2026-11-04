@@ -51,6 +51,7 @@ export interface AuditPolicy {
   yank: { requireReview: boolean };
   quarantine: { requireReview: boolean };
   selfApproval: { enabled: boolean; maxRiskTier: "medium" };
+  revocation: { flagBelowInstalls: number; withinDays: number };
 }
 
 export type SignalSource = "deterministic" | "llm";

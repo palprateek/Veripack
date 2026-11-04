@@ -382,6 +382,7 @@ describe("durable replay (integration)", () => {
         "010_v1_serving_boundary.sql",
         "011_v1_upstream_cache.sql",
         "012_dashboard_sessions.sql",
+        "013_v2_claims_agents.sql",
       ]);
 
       const jobs = await db.pool.query<{ state: string }>(

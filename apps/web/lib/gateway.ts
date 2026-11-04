@@ -132,3 +132,35 @@ export async function getInstallEvents(): Promise<Result<InstallEvent[]>> {
   if (result.error) return { error: result.error };
   return { data: result.data?.events ?? [] };
 }
+
+export interface PackageClaim {
+  id: string;
+  package_name: string;
+  claimant: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  decided_by: string | null;
+  created_at: string;
+}
+
+export interface AgentReview {
+  id: string;
+  release_id: string;
+  agent_id: string;
+  recommendation: "approve" | "reject" | "needs_info";
+  confidence: number | null;
+  rationale: string;
+  created_at: string;
+}
+
+export async function getClaims(): Promise<Result<PackageClaim[]>> {
+  const result = await gatewayGet<{ claims: PackageClaim[] }>("/admin/claims");
+  if (result.error) return { error: result.error };
+  return { data: result.data?.claims ?? [] };
+}
+
+export async function getAgentReviews(
+  releaseId: string,
+): Promise<Result<{ reviews: AgentReview[]; panel: { consensus: string | null; total: number } }>> {
+  return gatewayGet(`/admin/releases/${encodeURIComponent(releaseId)}/agent-reviews`);
+}

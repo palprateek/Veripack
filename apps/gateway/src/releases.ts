@@ -246,6 +246,17 @@ export async function listReleases(
   );
 }
 
+export async function listPackageNames(
+  db: Queryable,
+  orgId: string,
+): Promise<string[]> {
+  const result = await db.query<{ package_name: string }>(
+    "select distinct package_name from releases where org_id = $1",
+    [orgId],
+  );
+  return result.rows.map((row) => row.package_name);
+}
+
 export async function getCurrentAudit(
   db: Queryable,
   releaseId: string,

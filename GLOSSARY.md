@@ -192,9 +192,10 @@ evidence.
 _Avoid_: Certificate, badge
 
 **Agent panel**:
-A V2 concept: a set of specialized review agents whose combined decision would
-be bounded by risk tier and policy. V1 has no agent panel; LLM output is
-advisory only.
+A set of specialized review agents whose combined advisory decision is
+bounded by risk tier and policy. Implemented in the V2 layer: agents post
+append-only recommendations and a unanimous panel speaks with one advisory
+voice, but agents never approve a release — humans decide.
 _Avoid_: AI reviewer, auto-approver
 
 **Human escalation**:

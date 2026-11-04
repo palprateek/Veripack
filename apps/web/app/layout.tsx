@@ -34,6 +34,8 @@ export default async function RootLayout({
               {session && <Link href="/policy">Policy</Link>}
               {session && <Link href="/blocklist">Blocklist</Link>}
               {session && <Link href="/install-events">Install events</Link>}
+              {session && <Link href="/claims">Claims</Link>}
+              {session && <Link href="/agents">Agents</Link>}
               {session && <Link href="/security">Security</Link>}
               <a href={`${gatewayUrl}/health`} target="_blank" rel="noreferrer">
                 Gateway health

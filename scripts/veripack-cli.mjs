@@ -14,6 +14,7 @@ function usage() {
   veripack registry artifact reupload --release <id> --file <tarball.tgz> [--registry <url>] [--token <admin-token>]
   veripack bypass-check <package-lock.json|pnpm-lock.yaml|bun.lock> [--registry <url>]
   veripack publish <package-directory> --intent <text> [--registry <url>] [--token <token>] [--fail-on <level>]
+  veripack run <package[@version]> [--yes] [-- <package-args...>] [--registry <url>] [--token <token>]
 
 Options:
   --registry <url>   Veripack gateway URL (default: VERIPACK_REGISTRY_URL or localhost)
@@ -290,8 +291,69 @@ async function publishCommand(args) {
   }
 }
 
+async function runCommand(args) {
+  const spec = args[1];
+  const registry = option(args, "--registry", process.env.VERIPACK_REGISTRY_URL || "http://localhost:4874").replace(/\/+$/, "");
+  const token = option(args, "--token", process.env.VERIPACK_REGISTRY_TOKEN || "");
+  if (!token) throw new Error("A registry token is required via --token or VERIPACK_REGISTRY_TOKEN.");
+  const separator = args.indexOf("--");
+  const packageArgs = separator === -1 ? [] : args.slice(separator + 1);
+  const at = spec.lastIndexOf("@");
+  const name = at > 0 ? spec.slice(0, at) : spec;
+  const version = at > 0 ? spec.slice(at + 1) : "";
+
+  const statusResponse = await fetch(
+    `${registry}/-/veripack/audit-status?package=${encodeURIComponent(name)}${version ? `&version=${encodeURIComponent(version)}` : ""}`,
+    { headers: { authorization: `Bearer ${token}`, accept: "application/json" } },
+  );
+  const status = await statusResponse.json().catch(() => ({}));
+  if (!statusResponse.ok) throw new Error(status.error || `Audit status failed (${statusResponse.status}).`);
+
+  console.log(`${status.packageName}@${status.version ?? version ?? "latest"} [${status.source}] status=${status.status} risk=${status.riskTier ?? "n/a"} policy=${status.policyResult ?? "n/a"}`);
+  if (status.summary) console.log(status.summary);
+
+  if (status.policyResult === "block" || ["rejected", "quarantined"].includes(status.status)) {
+    throw new Error("This release is blocked by the registry gate and will not be run.");
+  }
+  const needsConfirm = status.status === "pending" || status.policyResult === "warn";
+  if (needsConfirm && !has(args, "--yes")) {
+    const { createInterface } = await import("node:readline");
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await new Promise((resolvePromise) =>
+      rl.question("This release is not fully approved. Run anyway? [y/N] ", resolvePromise),
+    );
+    rl.close();
+    if (!/^y(es)?$/i.test(String(answer).trim())) {
+      console.log("Aborted.");
+      return;
+    }
+  }
+
+  const temporary = await mkdtemp(join(tmpdir(), "veripack-run-"));
+  try {
+    const host = new URL(registry).host;
+    const npmrc = join(temporary, ".npmrc");
+    await writeFile(
+      npmrc,
+      `registry=${registry}/\n//${host}/:_authToken=${token}\n`,
+    );
+    const result = await run("npx", ["--yes", "--registry", `${registry}/`, "--userconfig", npmrc, spec, ...packageArgs], {
+      cwd: process.cwd(),
+    });
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    process.exitCode = typeof result.code === "number" ? result.code : 0;
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
+  if (args[0] === "run" && args[1]) {
+    await runCommand(args);
+    return;
+  }
   if (args[0] === "publish" && args[1]) {
     await publishCommand(args);
     return;
